@@ -10,16 +10,23 @@ pipeline {
         stage('Fetch Secrets from Vault') {
             steps {
                 script {
-                    def secrets = vault(
+                    withVault([
+                        vaultSecrets: [[
+                            path: "${VAULT_SECRET}",
+                            secretValues: [
+                                [envVar: 'SONAR_TOKEN', vaultKey: 'token'],
+                                [envVar: 'SONAR_HOST_URL', vaultKey: 'url']
+                            ]
+                        ]],
                         vaultUrl: env.VAULT_ADDR,
-                        vaultCredentialId: 'vault-jenkins-token', // ID kredensial yang sudah dibuat di Jenkins
-                        engineVersion: 2,
-                        path: "${VAULT_SECRET}",
-                        secretValues: [
-                            [envVar: 'SONAR_TOKEN', vaultKey: 'token'],
-                            [envVar: 'SONAR_HOST_URL', vaultKey: 'url']
-                        ]
-                    )
+                        credentialsId: 'vault-jenkins-token',
+                        engineVersion: 2
+                    ]) {
+                        sh '''
+                            echo "Fetched SONAR_TOKEN: $SONAR_TOKEN"
+                            echo "Fetched SONAR_HOST_URL: $SONAR_HOST_URL"
+                        '''
+                    }
                 }
             }
         }
