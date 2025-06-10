@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        VAULT_ADDR = 'http://192.168.1.10:8200' // Ganti sesuai alamat Vault kamu
+        VAULT_ADDR = 'http://192.168.1.10:8200' // Alamat Vault
         VAULT_SECRET = 'secret/sonarqube'
     }
 
@@ -10,37 +10,43 @@ pipeline {
         stage('Fetch Secrets from Vault') {
             steps {
                 script {
-                    def vaultSecrets = vault path: "${VAULT_SECRET}"
-                    env.SONAR_TOKEN = vaultSecrets.data.token
-                    env.SONAR_HOST_URL = vaultSecrets.data.url
+                    def secrets = vault(
+                        vaultUrl: env.VAULT_ADDR,
+                        vaultCredentialId: 'vault-jenkins-token', // ID kredensial yang sudah dibuat di Jenkins
+                        engineVersion: 2,
+                        path: "${VAULT_SECRET}",
+                        secretValues: [
+                            [envVar: 'SONAR_TOKEN', vaultKey: 'token'],
+                            [envVar: 'SONAR_HOST_URL', vaultKey: 'url']
+                        ]
+                    )
                 }
             }
         }
 
         stage('Checkout Code') {
             steps {
-                git 'git@github.com:Deni4h/go-sonarqube-demo.git' // Ganti dengan repo kamu
+                git 'git@github.com:Deni4h/go-sonarqube-demo.git'
             }
         }
 
         stage('SonarQube Scan') {
-            environment {
-                SONAR_SCANNER_HOME = tool 'SonarQubeScanner' // Ganti dengan nama scanner di Jenkins Tools
-            }
             steps {
-                withSonarQubeEnv('MySonar') {
-                    sh """
-                        ${SONAR_SCANNER_HOME}/bin/sonar-scanner \
-                        -Dsonar.projectKey=go-demo-testing \
-                        -Dsonar.sources=. \
-                        -Dsonar.host.url=${env.SONAR_HOST_URL} \
-                        -Dsonar.login=${env.SONAR_TOKEN}
-                    """
+                script {
+                    def scannerHome = tool name: 'SonarQubeScanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+                    withSonarQubeEnv('MySonar') {
+                        sh """
+                            ${scannerHome}/bin/sonar-scanner \\
+                            -Dsonar.projectKey=go-demo-testing \\
+                            -Dsonar.sources=. \\
+                            -Dsonar.host.url=$SONAR_HOST_URL \\
+                            -Dsonar.login=$SONAR_TOKEN
+                        """
+                    }
                 }
             }
         }
 
-        // Optional deploy stage
         // stage('Deploy') {
         //     steps {
         //         echo "Deploying app..."
