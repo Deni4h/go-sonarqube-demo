@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         VAULT_ADDR = 'http://192.168.1.11:8200'
-        VAULT_SECRET = 'secret/sonarqube'   // KV v2: tambahkan /data/
+        VAULT_SECRET = 'secret/sonarqube' // KV v1: tanpa /data/
         VAULT_TOKEN = 'hvs.vN8MOWnQdDUVD5r4fVO5Rjlt'
     }
 
@@ -11,7 +11,7 @@ pipeline {
         stage('Fetch Secrets from Vault') {
             steps {
                 sh '''
-                    echo "Mengambil secret dari Vault..."
+                    echo "Mengambil secret dari Vault KV v1..."
 
                     RESPONSE=$(curl -s $VAULT_ADDR/v1/$VAULT_SECRET -H "X-Vault-Token: $VAULT_TOKEN")
 
@@ -21,7 +21,8 @@ pipeline {
                     echo "SONAR_TOKEN=$SONAR_TOKEN" > vault.env
                     echo "SONAR_HOST_URL=$SONAR_HOST_URL" >> vault.env
 
-                    echo "Secrets berhasil diambil dan disimpan."
+                    echo "Secrets berhasil diambil:"
+                    cat vault.env
                 '''
             }
         }
@@ -31,7 +32,7 @@ pipeline {
                 git(
                     url: 'git@github.com:Deni4h/go-sonarqube-demo.git',
                     branch: 'main',
-                    credentialsId: 'git' // Ganti dengan ID credentials SSH kamu
+                    credentialsId: 'git'
                 )
             }
         }
