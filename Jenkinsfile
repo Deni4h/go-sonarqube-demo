@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         VAULT_ADDR = 'http://192.168.1.11:8200'
-        VAULT_SECRET = 'secret/sonarqube' // KV v1: tanpa /data/
+        VAULT_SECRET = 'secret/sonarqube' // KV v1 (bukan KV v2, jadi tidak perlu /data/)
         VAULT_TOKEN = 'hvs.vN8MOWnQdDUVD5r4fVO5Rjlt'
     }
 
@@ -18,8 +18,8 @@ pipeline {
                     SONAR_TOKEN=$(echo "$RESPONSE" | jq -r '.data.token')
                     SONAR_HOST_URL=$(echo "$RESPONSE" | jq -r '.data.url')
 
-                    echo "SONAR_TOKEN=$SONAR_TOKEN" > vault.env
-                    echo "SONAR_HOST_URL=$SONAR_HOST_URL" >> vault.env
+                    echo "SONAR_TOKEN=${SONAR_TOKEN}" > vault.env
+                    echo "SONAR_HOST_URL=${SONAR_HOST_URL}" >> vault.env
 
                     echo "Secrets berhasil diambil:"
                     cat vault.env
@@ -40,21 +40,23 @@ pipeline {
         stage('SonarQube Scan') {
             steps {
                 script {
+                    // Baca secret dari vault.env
+                    def props = readProperties file: 'vault.env'
+
+                    def SONAR_TOKEN = props['SONAR_TOKEN']
+                    def SONAR_HOST_URL = props['SONAR_HOST_URL']
+
+                    // Ambil path sonar scanner yang sudah didefinisikan di Jenkins
                     def scannerHome = tool name: 'SonarQubeScanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
 
-                    def props = readProperties file: 'vault.env'
-                    env.SONAR_TOKEN = props['SONAR_TOKEN']
-                    env.SONAR_HOST_URL = props['SONAR_HOST_URL']
-
-                    withSonarQubeEnv('MySonar') {
-                        sh """
-                            ${scannerHome}/bin/sonar-scanner \\
-                            -Dsonar.projectKey=go-demo-testing \\
-                            -Dsonar.sources=. \\
-                            -Dsonar.host.url=$SONAR_HOST_URL \\
-                            -Dsonar.login=$SONAR_TOKEN
-                        """
-                    }
+                    // Eksekusi scan
+                    sh """
+                        ${scannerHome}/bin/sonar-scanner \\
+                        -Dsonar.projectKey=go-demo-testing \\
+                        -Dsonar.sources=. \\
+                        -Dsonar.host.url=${SONAR_HOST_URL} \\
+                        -Dsonar.login=${SONAR_TOKEN}
+                    """
                 }
             }
         }
