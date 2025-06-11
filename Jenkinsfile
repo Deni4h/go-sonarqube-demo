@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         VAULT_ADDR = 'http://192.168.1.11:8200'
-        VAULT_SECRET = 'secret/data/sonarqube'   // KV v2: tambahkan /data/
+        VAULT_SECRET = 'secret/sonarqube'   // KV v2: tambahkan /data/
         VAULT_TOKEN = 'hvs.vN8MOWnQdDUVD5r4fVO5Rjlt'
     }
 
