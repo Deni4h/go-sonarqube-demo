@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        VAULT_ADDR = 'http://192.168.1.11:8200'       // Alamat Vault
-        VAULT_SECRET = 'secret/sonarqube'        // Path secret Vault (jangan lupa /data/ jika pakai KV v2)
-        VAULT_TOKEN = 'hvs.vN8MOWnQdDUVD5r4fVO5Rjlt'   // Token Vault
+        VAULT_ADDR = 'http://192.168.1.11:8200'
+        VAULT_SECRET = 'secret/data/sonarqube'   // KV v2: tambahkan /data/
+        VAULT_TOKEN = 'hvs.vN8MOWnQdDUVD5r4fVO5Rjlt'
     }
 
     stages {
@@ -13,14 +13,11 @@ pipeline {
                 sh '''
                     echo "Mengambil secret dari Vault..."
 
-                    # Request ke Vault
                     RESPONSE=$(curl -s $VAULT_ADDR/v1/$VAULT_SECRET -H "X-Vault-Token: $VAULT_TOKEN")
 
-                    # Ambil nilai dari key `token` dan `url`
                     SONAR_TOKEN=$(echo "$RESPONSE" | jq -r '.data.data.token')
                     SONAR_HOST_URL=$(echo "$RESPONSE" | jq -r '.data.data.url')
 
-                    # Simpan ke file agar bisa digunakan di stage lain
                     echo "SONAR_TOKEN=$SONAR_TOKEN" > vault.env
                     echo "SONAR_HOST_URL=$SONAR_HOST_URL" >> vault.env
 
@@ -31,7 +28,11 @@ pipeline {
 
         stage('Checkout Code') {
             steps {
-                git 'git@github.com:Deni4h/go-sonarqube-demo.git'
+                git(
+                    url: 'git@github.com:Deni4h/go-sonarqube-demo.git',
+                    branch: 'main',
+                    credentialsId: 'git' // Ganti dengan ID credentials SSH kamu
+                )
             }
         }
 
@@ -40,7 +41,6 @@ pipeline {
                 script {
                     def scannerHome = tool name: 'SonarQubeScanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
 
-                    // Load secrets dari file vault.env
                     def props = readProperties file: 'vault.env'
                     env.SONAR_TOKEN = props['SONAR_TOKEN']
                     env.SONAR_HOST_URL = props['SONAR_HOST_URL']
