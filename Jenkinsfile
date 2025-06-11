@@ -15,8 +15,8 @@ pipeline {
 
                     RESPONSE=$(curl -s $VAULT_ADDR/v1/$VAULT_SECRET -H "X-Vault-Token: $VAULT_TOKEN")
 
-                    SONAR_TOKEN=$(echo "$RESPONSE" | jq -r '.data.data.token')
-                    SONAR_HOST_URL=$(echo "$RESPONSE" | jq -r '.data.data.url')
+                    SONAR_TOKEN=$(echo "$RESPONSE" | jq -r '.data.token')
+                    SONAR_HOST_URL=$(echo "$RESPONSE" | jq -r '.data.url')
 
                     echo "SONAR_TOKEN=$SONAR_TOKEN" > vault.env
                     echo "SONAR_HOST_URL=$SONAR_HOST_URL" >> vault.env
