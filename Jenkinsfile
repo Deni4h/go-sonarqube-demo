@@ -2,12 +2,23 @@ pipeline {
     agent any
 
     environment {
-        VAULT_ADDR = 'http://192.168.1.10:8200' // Alamat Vault
+        VAULT_ADDR = 'http://192.168.1.11:8200' // Alamat Vault
         VAULT_SECRET = 'secret/sonarqube'
+        VAULT_TOKEN = 'hvs.vN8MOWnQdDUVD5r4fVO5Rjlt' // Token Vault
     }
 
     stages {
-        stage('Fetch Secrets from Vault') {
+        stage('Fetch Secrets via curl') {
+            steps {
+                sh '''
+                    echo "Mengambil secret langsung dari Vault via API:"
+                    curl $VAULT_ADDR/v1/$VAULT_SECRET \
+                      -H "X-Vault-Token: $VAULT_TOKEN"
+                '''
+            }
+        }
+
+        stage('Fetch Secrets from Vault Plugin') {
             steps {
                 script {
                     withVault([
