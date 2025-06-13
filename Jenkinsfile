@@ -63,10 +63,14 @@ pipeline {
             }
         }
 
-        // stage('Deploy') {
-        //     steps {
-        //         echo "Deploying app..."
-        //     }
-        // }
+        stage('Clean up') {
+        steps {
+            sh '''
+                echo "Menghapus vault.env demi keamanan"
+                rm -f vault.env
+            '''
+            }
+        }
     }
 }
+wc .
