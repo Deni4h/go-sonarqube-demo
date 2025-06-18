@@ -15,7 +15,7 @@ pipeline {
                 sh '''
                     echo "Mengambil secret dari Vault KV v1..."
 
-                    RESPONSE=$(curl -s $VAULT_ADDR/v1/$VAULT_SECRET -H "X-Vault-Token: $VAULT_TOKEN")
+                    RESPONSE=$(curl -k -s $VAULT_ADDR/v1/$VAULT_SECRET -H "X-Vault-Token: $VAULT_TOKEN")
 
                     SONAR_TOKEN=$(echo "$RESPONSE" | jq -r '.data.token')
                     SONAR_HOST_URL=$(echo "$RESPONSE" | jq -r '.data.url')
