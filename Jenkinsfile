@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        VAULT_ADDR = 'https://localhost:8200'
+        VAULT_ADDR = 'https://192.168.1.9:8200'
         VAULT_SECRET = 'secret/sonarqube' // KV v1 (bukan KV v2, jadi tidak perlu /data/)
     }
 
